@@ -1,0 +1,5 @@
+requests
+boto3
+psycopg2-binary
+python-dotenv
+apache-airflow
