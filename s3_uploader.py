@@ -16,12 +16,7 @@ def upload_to_s3(records: list, table: str = None) -> str:
     writer.writeheader()
     writer.writerows(records)
 
-    s3 = boto3.client(
-        "s3",
-        aws_access_key_id=config.AWS_ACCESS_KEY_ID,
-        aws_secret_access_key=config.AWS_SECRET_ACCESS_KEY,
-        region_name=config.AWS_REGION,
-    )
+    s3 = boto3.client("s3")
     s3.put_object(
         Bucket=config.S3_BUCKET,
         Key=s3_key,
