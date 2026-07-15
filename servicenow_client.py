@@ -9,7 +9,13 @@ def _flatten(value):
     return value
 
 
-def fetch_all_records(table: str = None, page_size: int = 1000) -> list:
+def fetch_all_records(table: str = None, since: str = None, page_size: int = 1000) -> list:
+    """
+    Fetch records from a ServiceNow table.
+    since: ISO timestamp string (e.g. '2026-01-01 00:00:00'). If provided, only
+           records with sys_updated_on >= since are returned. If None, all records
+           are fetched (full load).
+    """
     table = table or config.SN_TABLE
     url   = f"{config.SN_BASE_URL}/api/now/table/{table}"
     auth  = (config.SN_USERNAME, config.SN_PASSWORD)
@@ -25,6 +31,9 @@ def fetch_all_records(table: str = None, page_size: int = 1000) -> list:
             "sysparm_display_value": "true",
             "sysparm_exclude_reference_link": "true",
         }
+        if since:
+            params["sysparm_query"] = f"sys_updated_on>={since}"
+
         response = requests.get(url, auth=auth, headers=headers, params=params)
         response.raise_for_status()
 
@@ -39,5 +48,17 @@ def fetch_all_records(table: str = None, page_size: int = 1000) -> list:
             break
         offset += page_size
 
-    print(f"Total records fetched from '{table}': {len(all_records)}")
+    mode = f"since {since}" if since else "full load"
+    print(f"Total records fetched from '{table}' ({mode}): {len(all_records)}")
     return all_records
+
+
+def get_max_updated_on(records: list) -> str | None:
+    """
+    Returns the highest sys_updated_on timestamp from a batch of records.
+    This becomes the new high-water mark saved to the Airflow Variable after a
+    successful run, so the next run only pulls records updated after this point.
+    Returns None if the batch is empty.
+    """
+    timestamps = [r["sys_updated_on"] for r in records if r.get("sys_updated_on")]
+    return max(timestamps) if timestamps else None
