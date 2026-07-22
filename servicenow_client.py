@@ -1,3 +1,4 @@
+from typing import Optional
 import requests
 import config
 
@@ -53,7 +54,7 @@ def fetch_all_records(table: str = None, since: str = None, page_size: int = 100
     return all_records
 
 
-def get_max_updated_on(records: list) -> str | None:
+def get_max_updated_on(records: list) -> Optional[str]:
     """
     Returns the highest sys_updated_on timestamp from a batch of records.
     This becomes the new high-water mark saved to the Airflow Variable after a

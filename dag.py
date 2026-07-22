@@ -2,6 +2,7 @@ import json
 import sys
 import os
 from datetime import datetime
+from typing import Optional
 
 import boto3
 import psycopg2
@@ -54,7 +55,7 @@ def _redshift_query(sql: str):
 def servicenow_pipeline():
 
     @task
-    def get_last_run() -> str | None:
+    def get_last_run() -> Optional[str]:
         """Read the high-water mark from Airflow Variable. None on first run = full load."""
         since = Variable.get("sn_incident_last_run", default_var=None)
         print(f"Last run timestamp: {since or 'None (full load)'}")
@@ -73,7 +74,7 @@ def servicenow_pipeline():
         return count
 
     @task
-    def invoke_lambda(since: str | None) -> dict:
+    def invoke_lambda(since: Optional[str]) -> dict:
         """Invoke intern-sn-incident-extract Lambda with the since timestamp."""
         aws_key, aws_secret = _get_aws_creds()
         aws_region = Variable.get("aws_region", default_var="us-west-2")
